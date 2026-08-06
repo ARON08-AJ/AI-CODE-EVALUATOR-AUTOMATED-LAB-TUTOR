@@ -1,0 +1,50 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: ai-code-evaluator
+  datasource:
+    url: jdbc:sqlite:aievaluator.db
+    driver-class-name: org.sqlite.JDBC
+    username: sa
+    password: ""
+  jpa:
+    database-platform: org.hibernate.community.dialect.SQLiteDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+app:
+  jwt:
+    secret: 9a6f8b12c4d5e7f80123456789abcdef0123456789abcdef0123456789abcdef
+    expiration-ms: 86400000 # 24 hours
+  docker:
+    enabled: true
+    memory-limit: 256m
+    cpu-limit: 0.5
+    pids-limit: 50
+  ai:
+    groq-api-key: ${GROQ_API_KEY:mock-groq-key}
+    openrouter-api-key: ${OPENROUTER_API_KEY:mock-openrouter-key}
+    model: llama-3.3-70b-versatile
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
+logging:
+  level:
+    root: INFO
+    com.aievaluator: DEBUG
+    org.hibernate.SQL: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

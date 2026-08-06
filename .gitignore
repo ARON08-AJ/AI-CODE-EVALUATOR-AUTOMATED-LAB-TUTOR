@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+.pnpm-store/
+
+# Maven build outputs & binaries
+target/
+backend/target/
+*.class
+*.jar
+*.war
+
+# SQLite Local Database runtime file
+backend/aievaluator.db
+aievaluator.db
+*.db-journal
+
+# Vite Production Build
+frontend/dist/
+frontend/dist-ssr/
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.sublime-project
+*.sublime-workspace
+
+# Logs
+*.log
+backend/logs/
+
+# Operating System files
+.DS_Store
+Thumbs.db

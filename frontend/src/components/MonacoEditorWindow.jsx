@@ -85,9 +85,7 @@ export default function MonacoEditorWindow({ code, setCode, language, setLanguag
   const handleLanguageChange = (e) => {
     const newLang = e.target.value;
     setLanguage(newLang);
-    if (!code || Object.values(STARTER_TEMPLATES).includes(code.trim())) {
-      setCode(STARTER_TEMPLATES[newLang] || '');
-    }
+    setCode(STARTER_TEMPLATES[newLang] || '');
   };
 
   const handleReset = () => {

@@ -138,19 +138,26 @@ public class LocalExecutionService implements ExecutionService {
 
     private CompileStep prepareAndCompile(Path dir, String code, Language language) throws IOException, InterruptedException {
         String filename;
-        String execCmd;
 
         switch (language) {
             case PYTHON:
                 filename = "solution.py";
                 Files.writeString(dir.resolve(filename), code);
-                return new CompileStep(true, "", "python " + dir.resolve(filename).toAbsolutePath());
+                String pythonCmd = findPythonExecutable();
+                if (pythonCmd == null) {
+                    return new CompileStep(false, "Python interpreter not found on host machine PATH. Please install Python or run inside Docker container.", "");
+                }
+                return new CompileStep(true, "", pythonCmd + " " + dir.resolve(filename).toAbsolutePath());
 
             case C:
                 filename = "solution.c";
                 Path cFile = dir.resolve(filename);
                 Path cExe = dir.resolve("solution.exe");
                 Files.writeString(cFile, code);
+
+                if (!isCommandAvailable("gcc")) {
+                    return new CompileStep(false, "GCC (C Compiler) is not installed on local host machine. Please install MinGW / GCC or run inside Docker container.", "");
+                }
 
                 ProcessBuilder cPb = new ProcessBuilder("gcc", cFile.toAbsolutePath().toString(), "-o", cExe.toAbsolutePath().toString());
                 cPb.directory(dir.toFile());
@@ -164,6 +171,10 @@ public class LocalExecutionService implements ExecutionService {
                 Path cppFile = dir.resolve(filename);
                 Path cppExe = dir.resolve("solution.exe");
                 Files.writeString(cppFile, code);
+
+                if (!isCommandAvailable("g++")) {
+                    return new CompileStep(false, "G++ (C++ Compiler) is not installed on local host machine. Please install MinGW / G++ or run inside Docker container.", "");
+                }
 
                 ProcessBuilder cppPb = new ProcessBuilder("g++", cppFile.toAbsolutePath().toString(), "-o", cppExe.toAbsolutePath().toString());
                 cppPb.directory(dir.toFile());
@@ -179,12 +190,56 @@ public class LocalExecutionService implements ExecutionService {
                 Path javaFile = dir.resolve(filename);
                 Files.writeString(javaFile, code);
 
-                ProcessBuilder javaPb = new ProcessBuilder("javac", javaFile.toAbsolutePath().toString());
+                String javacCmd = findJavacExecutable();
+                String javaRunCmd = findJavaExecutable();
+
+                ProcessBuilder javaPb = new ProcessBuilder(javacCmd, javaFile.toAbsolutePath().toString());
                 javaPb.directory(dir.toFile());
                 Process javaProc = javaPb.start();
                 String javaErr = readStream(javaProc.getErrorStream());
                 boolean javaSuccess = javaProc.waitFor(10, TimeUnit.SECONDS) && javaProc.exitValue() == 0;
-                return new CompileStep(javaSuccess, javaErr, "java -cp " + dir.toAbsolutePath().toString() + " " + className);
+                return new CompileStep(javaSuccess, javaErr, javaRunCmd + " -cp " + dir.toAbsolutePath().toString() + " " + className);
+        }
+    }
+
+    private String findPythonExecutable() {
+        String[] candidates = {
+            "python", "py", "python3",
+            "C:\\Users\\aadhi\\AppData\\Local\\Microsoft\\WindowsApps\\python.exe"
+        };
+        for (String candidate : candidates) {
+            if (isCommandAvailable(candidate)) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
+    private String findJavacExecutable() {
+        if (isCommandAvailable("javac")) return "javac";
+        File jdkFile = new File("C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.12.8-hotspot\\bin\\javac.exe");
+        if (jdkFile.exists()) return jdkFile.getAbsolutePath();
+        return "javac";
+    }
+
+    private String findJavaExecutable() {
+        if (isCommandAvailable("java")) return "java";
+        File jdkFile = new File("C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.12.8-hotspot\\bin\\java.exe");
+        if (jdkFile.exists()) return jdkFile.getAbsolutePath();
+        return "java";
+    }
+
+    private boolean isCommandAvailable(String cmd) {
+        try {
+            Process p = new ProcessBuilder(cmd, "--version").start();
+            return p.waitFor(3, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            try {
+                Process p2 = new ProcessBuilder(cmd, "-version").start();
+                return p2.waitFor(3, TimeUnit.SECONDS);
+            } catch (Exception e2) {
+                return false;
+            }
         }
     }
 

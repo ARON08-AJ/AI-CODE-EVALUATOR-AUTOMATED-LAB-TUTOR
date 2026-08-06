@@ -40,4 +40,28 @@ export const dashboardAPI = {
   getFacultyStats: () => API.get('/dashboard/faculty'),
 };
 
+// Phase 2 AI Placement Ecosystem APIs
+export const codeReviewAPI = {
+  analyze: (payload) => API.post('/code-review/analyze', payload),
+};
+
+export const plagiarismAPI = {
+  checkPair: (payload) => API.post('/plagiarism/check', payload),
+  scanCohort: (labId) => API.get(`/plagiarism/cohort-scan/${labId}`),
+};
+
+export const resumeAPI = {
+  analyze: (payload) => API.post('/resume/analyze', payload),
+};
+
+export const interviewAPI = {
+  generate: (payload) => API.post('/interview/generate', payload),
+  evaluate: (payload) => API.post('/interview/evaluate', payload),
+};
+
+export const aptitudeAPI = {
+  getQuiz: (category) => API.get(`/aptitude/quiz?category=${category}`),
+  reviewEmail: (payload) => API.post('/aptitude/email-review', payload),
+};
+
 export default API;

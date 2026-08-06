@@ -7,6 +7,7 @@ import Register from './pages/Register';
 import StudentDashboard from './pages/StudentDashboard';
 import FacultyDashboard from './pages/FacultyDashboard';
 import CodeWorkspace from './pages/CodeWorkspace';
+import PlacementEcosystem from './pages/PlacementEcosystem';
 
 const ProtectedRoute = ({ children, allowedRole }) => {
   const { user, loading } = useAuth();
@@ -57,6 +58,15 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <CodeWorkspace />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/placement-ecosystem"
+            element={
+              <ProtectedRoute>
+                <PlacementEcosystem />
               </ProtectedRoute>
             }
           />

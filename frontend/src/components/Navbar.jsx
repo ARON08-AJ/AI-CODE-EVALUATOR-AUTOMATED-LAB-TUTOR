@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Code2, LogOut, LayoutDashboard, Terminal, FileText, ExternalLink, Shield } from 'lucide-react';
+import { Code2, LogOut, LayoutDashboard, Terminal, FileText, ExternalLink, Sparkles } from 'lucide-react';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -62,6 +62,18 @@ export default function Navbar() {
               Coding Lab IDE
             </Link>
           )}
+
+          <Link
+            to="/placement-ecosystem"
+            className={`px-3 py-2 rounded-md text-xs font-medium flex items-center gap-2 transition ${
+              location.pathname.includes('placement-ecosystem')
+                ? 'bg-slate-800 text-indigo-400 font-semibold'
+                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 text-indigo-400" />
+            AI Placement Hub
+          </Link>
 
           {/* Swagger OpenAPI link */}
           <a

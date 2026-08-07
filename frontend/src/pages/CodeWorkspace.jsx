@@ -4,7 +4,7 @@ import { labAPI, submissionAPI } from '../services/api';
 import Navbar from '../components/Navbar';
 import MonacoEditorWindow from '../components/MonacoEditorWindow';
 import AITutorPanel from '../components/AITutorPanel';
-import { Play, Send, CheckCircle2, XCircle, AlertTriangle, Clock, HardDrive, Terminal, Bot, BookOpen, Layers } from 'lucide-react';
+import { Play, Send, CheckCircle2, XCircle, AlertTriangle, Clock, HardDrive, Terminal, Bot, BookOpen, Layers, Maximize2, Minimize2, ChevronUp, ChevronDown } from 'lucide-react';
 
 export default function CodeWorkspace() {
   const { questionId } = useParams();
@@ -22,17 +22,18 @@ export default function CodeWorkspace() {
   const [submissionResult, setSubmissionResult] = useState(null);
   const [activeTab, setActiveTab] = useState('console'); // 'console' | 'ai'
 
+  // Console Resizing State
+  const [consoleSize, setConsoleSize] = useState('NORMAL'); // 'NORMAL' | 'LARGE' | 'FULL'
+
   useEffect(() => {
     const qId = questionId || '1';
     labAPI.getQuestion(qId)
       .then((res) => {
         setQuestion(res.data);
-        // Default code template
         setCode(`# Write your ${language} solution here\nn = int(input())\nif n % 2 == 0:\n    print("Even")\nelse:\n    print("Odd")\n`);
       })
       .catch((err) => {
         console.error("Error fetching question:", err);
-        // Fallback default mock question for local demo workspace
         setQuestion({
           id: 1,
           title: "Even or Odd Integer Check",
@@ -79,6 +80,7 @@ export default function CodeWorkspace() {
       setSubmissionResult(res.data);
       if (res.data.status !== 'ACCEPTED') {
         setActiveTab('ai'); // Auto-switch to AI Tutor Panel on failure
+        if (consoleSize === 'NORMAL') setConsoleSize('LARGE'); // Auto-expand height on failure so AI hints are fully visible!
       } else {
         setActiveTab('console');
       }
@@ -89,6 +91,12 @@ export default function CodeWorkspace() {
     }
   };
 
+  const toggleConsoleSize = () => {
+    if (consoleSize === 'NORMAL') setConsoleSize('LARGE');
+    else if (consoleSize === 'LARGE') setConsoleSize('FULL');
+    else setConsoleSize('NORMAL');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400">
@@ -96,6 +104,13 @@ export default function CodeWorkspace() {
       </div>
     );
   }
+
+  // Console height class mapping
+  const consoleHeightClass = consoleSize === 'FULL'
+    ? 'fixed inset-4 z-50 h-[calc(100vh-2rem)] shadow-2xl'
+    : consoleSize === 'LARGE'
+    ? 'h-96'
+    : 'h-64';
 
   return (
     <div className="h-screen bg-slate-950 text-slate-100 flex flex-col overflow-hidden">
@@ -156,9 +171,9 @@ export default function CodeWorkspace() {
         </div>
 
         {/* Center/Right Pane: Editor + Output & AI Tutor (8 cols) */}
-        <div className="lg:col-span-8 flex flex-col h-full gap-3 overflow-hidden">
+        <div className="lg:col-span-8 flex flex-col h-full gap-3 overflow-hidden relative">
           {/* Top: Monaco Editor */}
-          <div className="flex-1 min-h-[360px]">
+          <div className="flex-1 min-h-[300px]">
             <MonacoEditorWindow
               code={code}
               setCode={setCode}
@@ -194,8 +209,8 @@ export default function CodeWorkspace() {
             </div>
           </div>
 
-          {/* Bottom Pane: Console & AI Tutor Drawer Tabs */}
-          <div className="h-56 bg-slate-900 border border-slate-800 rounded-lg flex flex-col overflow-hidden shadow-lg">
+          {/* Bottom Pane: Console & AI Tutor Drawer Tabs with Resize Toggler */}
+          <div className={`bg-slate-900 border border-slate-800 rounded-lg flex flex-col overflow-hidden transition-all duration-200 ${consoleHeightClass}`}>
             {/* Output Tabs Header */}
             <div className="bg-slate-950 px-4 border-b border-slate-800 flex items-center justify-between">
               <div className="flex">
@@ -227,11 +242,11 @@ export default function CodeWorkspace() {
                 </button>
               </div>
 
-              {/* Status Badge */}
-              {(submissionResult || runResult) && (
-                <div className="py-1">
+              {/* Status Badge & Height Resize Controls */}
+              <div className="flex items-center gap-3">
+                {(submissionResult || runResult) && (
                   <span
-                    className={`px-3 py-1 rounded text-xs font-mono font-bold uppercase tracking-wider ${
+                    className={`px-3 py-0.5 rounded text-xs font-mono font-bold uppercase tracking-wider ${
                       (submissionResult?.status || runResult?.status) === 'ACCEPTED'
                         ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
                         : 'bg-rose-950 text-rose-400 border border-rose-800'
@@ -239,8 +254,33 @@ export default function CodeWorkspace() {
                   >
                     {submissionResult?.status || runResult?.status}
                   </span>
+                )}
+
+                {/* Resize Toggler Buttons */}
+                <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded px-1.5 py-0.5">
+                  <button
+                    onClick={() => setConsoleSize('NORMAL')}
+                    className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-semibold transition ${consoleSize === 'NORMAL' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                    title="Normal Height (256px)"
+                  >
+                    256px
+                  </button>
+                  <button
+                    onClick={() => setConsoleSize('LARGE')}
+                    className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-semibold transition ${consoleSize === 'LARGE' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                    title="Large Height (384px)"
+                  >
+                    384px
+                  </button>
+                  <button
+                    onClick={() => setConsoleSize(consoleSize === 'FULL' ? 'NORMAL' : 'FULL')}
+                    className={`p-1 text-slate-400 hover:text-white transition ${consoleSize === 'FULL' ? 'text-sky-400' : ''}`}
+                    title={consoleSize === 'FULL' ? 'Exit Full Screen' : 'Expand Full Screen'}
+                  >
+                    {consoleSize === 'FULL' ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+                  </button>
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Tab Contents */}

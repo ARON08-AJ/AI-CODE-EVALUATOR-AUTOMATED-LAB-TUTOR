@@ -40,7 +40,7 @@ export const dashboardAPI = {
   getFacultyStats: () => API.get('/dashboard/faculty'),
 };
 
-// Phase 2 AI Placement Ecosystem APIs
+// Phase 2 AI Placement & Career Ecosystem APIs
 export const codeReviewAPI = {
   analyze: (payload) => API.post('/code-review/analyze', payload),
 };
@@ -52,6 +52,9 @@ export const plagiarismAPI = {
 
 export const resumeAPI = {
   analyze: (payload) => API.post('/resume/analyze', payload),
+  uploadPdf: (formData) => API.post('/resume/upload-pdf', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
 };
 
 export const interviewAPI = {
@@ -62,6 +65,15 @@ export const interviewAPI = {
 export const aptitudeAPI = {
   getQuiz: (category) => API.get(`/aptitude/quiz?category=${category}`),
   reviewEmail: (payload) => API.post('/aptitude/email-review', payload),
+};
+
+export const contestAPI = {
+  getActive: () => API.get('/contests/active'),
+};
+
+export const vivaAPI = {
+  generate: (payload) => API.post('/viva/generate', payload),
+  evaluate: (payload) => API.post('/viva/evaluate', payload),
 };
 
 export default API;

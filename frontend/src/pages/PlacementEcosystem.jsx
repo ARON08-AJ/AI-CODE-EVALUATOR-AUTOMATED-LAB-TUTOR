@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import Navbar from '../components/Navbar';
-import { codeReviewAPI, plagiarismAPI, resumeAPI, interviewAPI, aptitudeAPI } from '../services/api';
-import { Sparkles, Code2, ShieldAlert, FileText, MessageSquare, BookOpen, CheckCircle, AlertTriangle, ArrowRight, Bot, Search } from 'lucide-react';
+import { codeReviewAPI, plagiarismAPI, resumeAPI, interviewAPI, aptitudeAPI, contestAPI, vivaAPI } from '../services/api';
+import { Sparkles, Code2, ShieldAlert, FileText, MessageSquare, BookOpen, CheckCircle, AlertTriangle, ArrowRight, Bot, Search, Upload, Trophy, HelpCircle } from 'lucide-react';
 
 export default function PlacementEcosystem() {
-  const [activeTab, setActiveTab] = useState('code-review'); // 'code-review' | 'plagiarism' | 'resume' | 'interview' | 'aptitude'
+  const [activeTab, setActiveTab] = useState('code-review'); // 'code-review' | 'plagiarism' | 'resume' | 'interview' | 'aptitude' | 'viva' | 'contest'
 
   // Code Review State
   const [reviewCode, setReviewCode] = useState("def calculate_sum(arr):\n    total = 0\n    for x in arr:\n        if x > 0:\n            total += x\n    return total\n");
@@ -20,6 +20,7 @@ export default function PlacementEcosystem() {
   const [resumeText, setResumeText] = useState("Jane Doe\nFull Stack Developer\nSkills: Java, Python, Spring Boot, React, SQL, Git\nProjects: Built AI Code Evaluator application.");
   const [targetRole, setTargetRole] = useState("Backend Engineer");
   const [githubUser, setGithubUser] = useState("Aadhikesav07");
+  const [pdfFile, setPdfFile] = useState(null);
   const [resumeResult, setResumeResult] = useState(null);
   const [analyzingResume, setAnalyzingResume] = useState(false);
 
@@ -31,11 +32,21 @@ export default function PlacementEcosystem() {
   const [generatingQ, setGeneratingQ] = useState(false);
   const [evaluatingAns, setEvaluatingAns] = useState(false);
 
-  // Aptitude State
+  // Aptitude & Soft Skills State
   const [emailDraft, setEmailDraft] = useState("dear professor, i need extra time for lab 1 because of fever. thanks");
   const [emailContext, setEmailContext] = useState("Assignment Deadline Extension Request");
   const [emailResult, setEmailResult] = useState(null);
   const [evaluatingEmail, setEvaluatingEmail] = useState(false);
+
+  // Viva State
+  const [vivaResult, setVivaResult] = useState(null);
+  const [vivaAnsResult, setVivaAnsResult] = useState(null);
+  const [generatingViva, setGeneratingViva] = useState(false);
+  const [vivaAnswerText, setVivaAnswerText] = useState("");
+
+  // Contest State
+  const [contestData, setContestData] = useState(null);
+  const [loadingContest, setLoadingContest] = useState(false);
 
   // Handlers
   const handleRunCodeReview = async () => {
@@ -65,8 +76,17 @@ export default function PlacementEcosystem() {
   const handleAnalyzeResume = async () => {
     setAnalyzingResume(true);
     try {
-      const res = await resumeAPI.analyze({ resumeText, targetRole, githubUsername: githubUser });
-      setResumeResult(res.data);
+      if (pdfFile) {
+        const formData = new FormData();
+        formData.append('file', pdfFile);
+        formData.append('targetRole', targetRole);
+        formData.append('githubUsername', githubUser);
+        const res = await resumeAPI.uploadPdf(formData);
+        setResumeResult(res.data);
+      } else {
+        const res = await resumeAPI.analyze({ resumeText, targetRole, githubUsername: githubUser });
+        setResumeResult(res.data);
+      }
     } catch (err) {
       alert("Failed to analyze resume.");
     } finally {
@@ -116,6 +136,43 @@ export default function PlacementEcosystem() {
     }
   };
 
+  const handleGenerateViva = async () => {
+    setGeneratingViva(true);
+    try {
+      const res = await vivaAPI.generate({ code: reviewCode, problemTitle: "Even or Odd Integer Check" });
+      setVivaResult(res.data);
+    } catch (err) {
+      alert("Failed to generate viva questions.");
+    } finally {
+      setGeneratingViva(false);
+    }
+  };
+
+  const handleEvaluateViva = async () => {
+    try {
+      const res = await vivaAPI.evaluate({
+        code: reviewCode,
+        vivaQuestion: vivaResult?.vivaQuestions?.[0],
+        studentAnswer: vivaAnswerText
+      });
+      setVivaAnsResult(res.data);
+    } catch (err) {
+      alert("Failed to evaluate viva response.");
+    }
+  };
+
+  const handleLoadContest = async () => {
+    setLoadingContest(true);
+    try {
+      const res = await contestAPI.getActive();
+      setContestData(res.data);
+    } catch (err) {
+      alert("Failed to load active contest data.");
+    } finally {
+      setLoadingContest(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       <Navbar />
@@ -128,7 +185,7 @@ export default function PlacementEcosystem() {
               <Sparkles className="w-4 h-4" /> AI Placement & Education Ecosystem
             </div>
             <h1 className="text-2xl font-bold text-slate-100">Career Readiness & AI Placement Hub</h1>
-            <p className="text-sm text-slate-400 mt-1">Code Quality Review, Plagiarism Detection, ATS Resume Analyzer, Mock Interviewer, & Soft Skills Coach.</p>
+            <p className="text-sm text-slate-400 mt-1">Code Quality Review, Plagiarism Detection, PDF ATS Resume Analyzer, Mock Interviewer, Viva Voce, & Contests.</p>
           </div>
         </div>
 
@@ -158,7 +215,7 @@ export default function PlacementEcosystem() {
               activeTab === 'resume' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <FileText className="w-4 h-4" /> Resume ATS Analyzer
+            <FileText className="w-4 h-4" /> PDF Resume ATS
           </button>
 
           <button
@@ -168,6 +225,24 @@ export default function PlacementEcosystem() {
             }`}
           >
             <MessageSquare className="w-4 h-4" /> AI Mock Interviewer
+          </button>
+
+          <button
+            onClick={() => setActiveTab('viva')}
+            className={`px-4 py-2.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition ${
+              activeTab === 'viva' ? 'bg-rose-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <HelpCircle className="w-4 h-4" /> AI Viva Assistant
+          </button>
+
+          <button
+            onClick={() => { setActiveTab('contest'); handleLoadContest(); }}
+            className={`px-4 py-2.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition ${
+              activeTab === 'contest' ? 'bg-yellow-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Trophy className="w-4 h-4" /> Coding Contests
           </button>
 
           <button
@@ -317,13 +392,31 @@ export default function PlacementEcosystem() {
           </div>
         )}
 
-        {/* Tab 3: Resume ATS Analyzer */}
+        {/* Tab 3: PDF Resume ATS Analyzer */}
         {activeTab === 'resume' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-6 bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-lg space-y-4">
               <h3 className="font-bold text-slate-100 flex items-center gap-2">
-                <FileText className="w-5 h-5 text-emerald-400" /> Resume & GitHub Portfolio Input
+                <FileText className="w-5 h-5 text-emerald-400" /> PDF Resume File & GitHub Portfolio Input
               </h3>
+
+              {/* PDF File Upload */}
+              <div className="p-4 bg-slate-950 border border-dashed border-emerald-800/80 rounded-xl text-center">
+                <Upload className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
+                <div className="text-xs font-semibold text-slate-200">Upload Resume (.PDF File)</div>
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={(e) => setPdfFile(e.target.files[0])}
+                  className="mt-2 text-xs text-slate-400 cursor-pointer"
+                />
+                {pdfFile && (
+                  <div className="mt-2 text-xs text-emerald-400 font-mono">
+                    Selected: {pdfFile.name} ({(pdfFile.size / 1024).toFixed(1)} KB)
+                  </div>
+                )}
+              </div>
+
               <div>
                 <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">Target Job Role</label>
                 <input
@@ -342,15 +435,17 @@ export default function PlacementEcosystem() {
                   className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-xs text-slate-100"
                 />
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">Resume Text</label>
-                <textarea
-                  rows="6"
-                  value={resumeText}
-                  onChange={(e) => setResumeText(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-xs text-slate-100"
-                ></textarea>
-              </div>
+              {!pdfFile && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">Or Paste Resume Text</label>
+                  <textarea
+                    rows="4"
+                    value={resumeText}
+                    onChange={(e) => setResumeText(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-xs text-slate-100"
+                  ></textarea>
+                </div>
+              )}
               <button
                 onClick={handleAnalyzeResume}
                 disabled={analyzingResume}
@@ -366,7 +461,7 @@ export default function PlacementEcosystem() {
               </h3>
               {!resumeResult ? (
                 <div className="text-slate-400 text-xs text-center py-12">
-                  Click 'Run ATS Resume Audit' to score your resume.
+                  Upload a PDF resume or paste text to audit ATS score.
                 </div>
               ) : (
                 <div className="space-y-4 text-xs">
@@ -494,7 +589,141 @@ export default function PlacementEcosystem() {
           </div>
         )}
 
-        {/* Tab 5: Soft Skills & Professional Email Coach */}
+        {/* Tab 5: AI Viva Voce Assistant */}
+        {activeTab === 'viva' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-6 bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-lg space-y-4">
+              <h3 className="font-bold text-slate-100 flex items-center gap-2">
+                <HelpCircle className="w-5 h-5 text-rose-400" /> AI Viva Voce Oral Code Defense
+              </h3>
+              <p className="text-xs text-slate-400">Generates targeted oral defense viva questions tailored to your submitted code.</p>
+
+              <button
+                onClick={handleGenerateViva}
+                disabled={generatingViva}
+                className="w-full py-2.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-lg shadow-md transition disabled:opacity-50"
+              >
+                {generatingViva ? 'Generating Viva Questions...' : 'Generate Code Viva Defense Questions'}
+              </button>
+
+              {vivaResult && (
+                <div className="p-4 bg-slate-950 border border-slate-800 rounded-lg space-y-3 text-xs">
+                  <div className="font-bold text-rose-400">{vivaResult.focusArea}</div>
+                  <div className="space-y-2">
+                    {vivaResult.vivaQuestions?.map((q, i) => (
+                      <div key={i} className="p-2.5 bg-slate-900 border border-slate-800 rounded text-slate-200">
+                        <strong>Q{i+1}:</strong> {q}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 mb-1">Your Oral Defense Answer (Q1):</label>
+                    <textarea
+                      rows="3"
+                      value={vivaAnswerText}
+                      onChange={(e) => setVivaAnswerText(e.target.value)}
+                      placeholder="Explain your algorithm choice..."
+                      className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-slate-100"
+                    ></textarea>
+                  </div>
+
+                  <button
+                    onClick={handleEvaluateViva}
+                    className="w-full py-2 bg-rose-600 hover:bg-rose-500 text-white font-semibold rounded shadow"
+                  >
+                    Evaluate Viva Defense Response
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="lg:col-span-6 bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-lg space-y-4">
+              <h3 className="font-bold text-slate-100 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-rose-400" /> Viva Voce Scorecard
+              </h3>
+              {!vivaAnsResult ? (
+                <div className="text-slate-400 text-xs text-center py-12">
+                  Generate viva questions and submit an oral defense answer to receive AI feedback.
+                </div>
+              ) : (
+                <div className="space-y-4 text-xs">
+                  <div className="p-4 bg-slate-950 border border-slate-800 rounded-lg text-center">
+                    <div className="text-slate-400">Viva Defense Score</div>
+                    <div className="text-3xl font-bold text-rose-400">{vivaAnsResult.vivaScore}/100</div>
+                    <div className="text-xs font-semibold text-emerald-400 mt-1">{vivaAnsResult.verdict}</div>
+                  </div>
+
+                  <div className="p-3 bg-slate-950 border border-slate-800 rounded-lg">
+                    <div className="font-semibold text-rose-400 mb-1">Defense Feedback</div>
+                    <p className="text-slate-300">{vivaAnsResult.feedback}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 6: AI Coding Contests */}
+        {activeTab === 'contest' && (
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-lg space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="font-bold text-slate-100 flex items-center gap-2 text-base">
+                  <Trophy className="w-5 h-5 text-yellow-400" /> Live AI Competitive Coding Contests
+                </h3>
+                <p className="text-xs text-slate-400 mt-1">Weekly challenges, live leaderboards, and performance ranking.</p>
+              </div>
+            </div>
+
+            {!contestData ? (
+              <div className="text-slate-400 text-xs text-center py-12">Loading Active Contest...</div>
+            ) : (
+              <div className="space-y-4">
+                <div className="p-4 bg-slate-950 border border-yellow-900/50 rounded-xl flex items-center justify-between">
+                  <div>
+                    <span className="px-2.5 py-0.5 text-[11px] font-bold bg-yellow-950 text-yellow-400 border border-yellow-800 rounded">
+                      {contestData.difficulty}
+                    </span>
+                    <h4 className="text-lg font-bold text-slate-100 mt-1">{contestData.title}</h4>
+                    <p className="text-xs text-slate-400">{contestData.description}</p>
+                  </div>
+                  <div className="text-right text-xs">
+                    <div className="text-slate-400">Participants: <strong className="text-slate-100">{contestData.totalParticipants}</strong></div>
+                    <div className="text-emerald-400 font-semibold mt-1">Status: LIVE</div>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs text-slate-300">
+                    <thead className="bg-slate-950 text-slate-400 uppercase text-[10px] border-b border-slate-800">
+                      <tr>
+                        <th className="p-3">Rank</th>
+                        <th className="p-3">Participant</th>
+                        <th className="p-3">Score</th>
+                        <th className="p-3">Problems Solved</th>
+                        <th className="p-3">Time</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800">
+                      {contestData.leaderboard?.map((entry) => (
+                        <tr key={entry.rank} className="hover:bg-slate-850">
+                          <td className="p-3 font-bold text-yellow-400">#{entry.rank}</td>
+                          <td className="p-3 font-semibold text-slate-100">{entry.studentName}</td>
+                          <td className="p-3 font-mono font-bold text-sky-400">{entry.score} pts</td>
+                          <td className="p-3 font-mono">{entry.problemsSolved} / 3</td>
+                          <td className="p-3 font-mono text-slate-400">{entry.totalTimeMs} ms</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Tab 7: Soft Skills Coach */}
         {activeTab === 'aptitude' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-6 bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-lg space-y-4">

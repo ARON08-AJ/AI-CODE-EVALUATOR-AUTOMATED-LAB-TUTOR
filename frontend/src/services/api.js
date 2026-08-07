@@ -40,7 +40,7 @@ export const dashboardAPI = {
   getFacultyStats: () => API.get('/dashboard/faculty'),
 };
 
-// 16 Advanced GenAI Ecosystem APIs
+// 18 Advanced GenAI Ecosystem APIs
 export const codeReviewAPI = {
   analyze: (payload) => API.post('/code-review/analyze', payload),
 };
@@ -76,7 +76,6 @@ export const vivaAPI = {
   evaluate: (payload) => API.post('/viva/evaluate', payload),
 };
 
-// Phase 3 Modules
 export const learningPathAPI = {
   getRoadmap: () => API.get('/learning-path/generate'),
 };
@@ -112,6 +111,14 @@ export const facultyAssistantAPI = {
 
 export const labReportAPI = {
   downloadPdfUrl: (labId) => `/api/lab-report/download-pdf/${labId}`,
+};
+
+export const interviewSimAPI = {
+  simulate: (payload) => API.post('/interview-sim/simulate', payload),
+};
+
+export const projectReviewAPI = {
+  analyze: (payload) => API.post('/project-review/analyze', payload),
 };
 
 export default API;

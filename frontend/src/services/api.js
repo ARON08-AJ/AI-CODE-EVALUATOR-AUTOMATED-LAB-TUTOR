@@ -40,7 +40,7 @@ export const dashboardAPI = {
   getFacultyStats: () => API.get('/dashboard/faculty'),
 };
 
-// Phase 2 AI Placement & Career Ecosystem APIs
+// 16 Advanced GenAI Ecosystem APIs
 export const codeReviewAPI = {
   analyze: (payload) => API.post('/code-review/analyze', payload),
 };
@@ -74,6 +74,44 @@ export const contestAPI = {
 export const vivaAPI = {
   generate: (payload) => API.post('/viva/generate', payload),
   evaluate: (payload) => API.post('/viva/evaluate', payload),
+};
+
+// Phase 3 Modules
+export const learningPathAPI = {
+  getRoadmap: () => API.get('/learning-path/generate'),
+};
+
+export const adaptiveQuestionAPI = {
+  generate: (weakTopic, difficulty) => API.post(`/adaptive/generate?weakTopic=${weakTopic}&difficulty=${difficulty}`),
+};
+
+export const debuggerReplayAPI = {
+  getReplay: (submissionId) => API.get(`/debugger/replay/${submissionId}`),
+};
+
+export const analyticsAPI = {
+  getStudent: () => API.get('/analytics/student'),
+};
+
+export const placementAPI = {
+  getReadiness: () => API.get('/placement/readiness'),
+};
+
+export const pairTutorAPI = {
+  chat: (payload) => API.post('/pair-tutor/chat', payload),
+};
+
+export const revisionAPI = {
+  getNotes: (topic) => API.get(`/revision/generate?topic=${topic}`),
+};
+
+export const facultyAssistantAPI = {
+  generateLab: (problemIdea) => API.post(`/faculty-assistant/generate-lab?problemIdea=${problemIdea}`),
+  generateEdgeCases: (problemStatement) => API.post('/faculty-assistant/generate-edge-cases', { problemStatement }),
+};
+
+export const labReportAPI = {
+  downloadPdfUrl: (labId) => `/api/lab-report/download-pdf/${labId}`,
 };
 
 export default API;

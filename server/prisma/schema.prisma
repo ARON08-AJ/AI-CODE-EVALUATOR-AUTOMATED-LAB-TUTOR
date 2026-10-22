@@ -1,0 +1,329 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String   @id @default(uuid())
+  name               String
+  email              String   @unique
+  registerNumber     String?  @unique
+  passwordHash       String
+  role               String // "STUDENT", "FACULTY", "ADMIN"
+  mustChangePassword Boolean  @default(false)
+  department         String?
+  year               Int?
+  section            String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  isActive           Boolean  @default(true)
+
+  createdLabs Lab[]           @relation("CreatedLabs")
+  createdTopics Topic[]       @relation("CreatedTopics")
+  assignments LabAssignment[]
+  submissions Submission[]
+  announcements Announcement[]
+  createdExams Exam[]          @relation("CreatedExams")
+  examAssignments ExamAssignment[]
+  examAttempts ExamAttempt[]
+  resumeAnalyses ResumeAnalysis[]
+  mockTests MockTest[]
+
+  @@index([email])
+  @@index([registerNumber])
+  @@index([role])
+}
+
+model Lab {
+  id                 String   @id @default(uuid())
+  title              String
+  description        String
+  constraints        String
+  sampleInput        String
+  sampleOutput       String
+  problemKey         String?  @unique
+  difficulty         String // "EASY", "MEDIUM", "HARD"
+  supportedLanguages String // e.g., "C,C++,Java,Python"
+  published          Boolean  @default(false)
+  topicId            String?
+  createdById        String
+  dueDate            DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  topic       Topic?          @relation("LabTopic", fields: [topicId], references: [id], onDelete: SetNull)
+  createdBy   User            @relation("CreatedLabs", fields: [createdById], references: [id])
+  testCases   TestCase[]
+  assignments LabAssignment[]
+  submissions Submission[]
+  tags        Tag[]
+  examQuestions ExamQuestion[]
+
+  @@index([createdById])
+  @@index([topicId])
+  @@index([published])
+  @@index([difficulty])
+}
+
+model Topic {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy   User     @relation("CreatedTopics", fields: [createdById], references: [id])
+  labs        Lab[]    @relation("LabTopic")
+
+  @@index([createdById])
+}
+
+model LabAssignment {
+  id         String    @id @default(uuid())
+  labId      String
+  studentId  String
+  dueDate    DateTime?
+  assignedAt DateTime  @default(now())
+
+  lab     Lab  @relation(fields: [labId], references: [id], onDelete: Cascade)
+  student User @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, labId])
+  @@index([studentId])
+  @@index([labId])
+  @@index([dueDate])
+}
+
+model TestCase {
+  id             String   @id @default(uuid())
+  labId          String
+  input          String
+  expectedOutput String
+  visibility     String // "PUBLIC", "HIDDEN"
+  createdAt      DateTime @default(now())
+
+  lab               Lab                    @relation(fields: [labId], references: [id], onDelete: Cascade)
+  submissionResults SubmissionTestResult[]
+
+  @@index([labId])
+  @@index([visibility])
+}
+
+model Submission {
+  id            String   @id @default(uuid())
+  studentId     String
+  labId         String
+  language      String // "C", "C++", "Java", "Python"
+  sourceCode    String
+  status        String // "ACCEPTED", "COMPILATION_ERROR", "RUNTIME_ERROR", "TIME_LIMIT_EXCEEDED", "MEMORY_LIMIT_EXCEEDED", "OUTPUT_LIMIT_EXCEEDED", "WRONG_ANSWER"
+  executionTime Float? // in milliseconds
+  memoryUsage   Float? // in KB/MB
+  totalTests    Int
+  passedTests   Int
+  failedTests   Int
+  createdAt     DateTime @default(now())
+
+  student     User                   @relation(fields: [studentId], references: [id]) // Prefer not to cascade delete submissions if user is deleted, keeping history. Or we can restrict.
+  lab         Lab                    @relation(fields: [labId], references: [id], onDelete: Cascade)
+  testResults SubmissionTestResult[]
+  aiFeedback  AIFeedback[]
+
+  @@index([studentId])
+  @@index([labId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model SubmissionTestResult {
+  id            String  @id @default(uuid())
+  submissionId  String
+  testCaseId    String
+  passed        Boolean
+  executionTime Float? // in milliseconds
+  status        String // "PASSED", "FAILED", "RUNTIME_ERROR", "TIME_LIMIT_EXCEEDED"
+
+  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  testCase   TestCase   @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+
+  @@unique([submissionId, testCaseId])
+  @@index([submissionId])
+  @@index([testCaseId])
+}
+
+model AIFeedback {
+  id               String   @id @default(uuid())
+  submissionId     String
+  hintLevel        Int      @default(1)
+  errorType        String
+  explanation      String
+  hint             String
+  conceptsToReview String // Stored as JSON string
+  nextSteps        String // Stored as JSON string
+  createdAt        DateTime @default(now())
+
+  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@unique([submissionId, hintLevel])
+  @@index([submissionId])
+}
+
+model Tag {
+  id   String @id @default(uuid())
+  name String @unique
+  labs Lab[]
+}
+
+model Announcement {
+  id             String   @id @default(uuid())
+  title          String
+  content        String
+  published      Boolean  @default(false)
+  roleVisibility String   @default("STUDENT") // "STUDENT", "FACULTY", "ALL"
+  createdById    String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
+
+  createdBy      User     @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([createdById])
+  @@index([roleVisibility])
+  @@index([published])
+  @@index([createdAt])
+}
+
+model Exam {
+  id                  String   @id @default(uuid())
+  title               String
+  description         String
+  duration            Int // Duration in minutes
+  startTime           DateTime
+  endTime             DateTime
+  published           Boolean  @default(false)
+  createdById         String
+  maxTabSwitches      Int      @default(3)
+  copyPasteRestricted Boolean  @default(true)
+  fullScreenRequired  Boolean  @default(true)
+  autoSubmitOnExpiry  Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  createdBy   User             @relation("CreatedExams", fields: [createdById], references: [id])
+  questions   ExamQuestion[]
+  assignments ExamAssignment[]
+  attempts    ExamAttempt[]
+
+  @@index([createdById])
+  @@index([published])
+  @@index([startTime])
+  @@index([endTime])
+}
+
+model ExamQuestion {
+  id      String @id @default(uuid())
+  examId  String
+  labId   String
+  order   Int    @default(1)
+  points  Int    @default(100)
+
+  exam Exam @relation(fields: [examId], references: [id], onDelete: Cascade)
+  lab  Lab  @relation(fields: [labId], references: [id], onDelete: Cascade)
+
+  @@unique([examId, labId])
+  @@index([examId])
+  @@index([labId])
+}
+
+model ExamAssignment {
+  id         String   @id @default(uuid())
+  examId     String
+  studentId  String
+  assignedAt DateTime @default(now())
+
+  exam    Exam @relation(fields: [examId], references: [id], onDelete: Cascade)
+  student User @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([examId, studentId])
+  @@index([examId])
+  @@index([studentId])
+}
+
+model ExamAttempt {
+  id          String    @id @default(uuid())
+  examId      String
+  studentId   String
+  startedAt   DateTime  @default(now())
+  submittedAt DateTime?
+  status      String    @default("IN_PROGRESS") // "IN_PROGRESS", "SUBMITTED", "AUTO_SUBMITTED", "DISQUALIFIED"
+  tabSwitches Int       @default(0)
+  score       Float     @default(0)
+
+  exam       Exam            @relation(fields: [examId], references: [id], onDelete: Cascade)
+  student    User            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  violations ExamViolation[]
+
+  @@unique([examId, studentId])
+  @@index([examId])
+  @@index([studentId])
+  @@index([status])
+}
+
+model ExamViolation {
+  id            String   @id @default(uuid())
+  attemptId     String
+  violationType String // "TAB_SWITCH", "COPY_PASTE", "FULLSCREEN_EXIT", "WINDOW_BLUR"
+  details       String?
+  timestamp     DateTime @default(now())
+
+  attempt ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@index([attemptId])
+  @@index([violationType])
+  @@index([timestamp])
+}
+
+model ResumeAnalysis {
+  id                String   @id @default(uuid())
+  studentId         String
+  fileName          String
+  rawText           String
+  skills            String // JSON array of extracted skills
+  experience        String // JSON array/object of experience
+  projects          String // JSON array of projects
+  education         String // JSON array of education
+  strengths         String // JSON array of strengths
+  weaknesses        String // JSON array of weaknesses
+  missingSkills     String // JSON array of missing in-demand skills
+  recommendedTopics String // JSON array of recommended AutoLab topics/labs
+  createdAt         DateTime @default(now())
+
+  student User @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([createdAt])
+}
+
+model MockTest {
+  id           String    @id @default(uuid())
+  studentId    String
+  title        String
+  skillsTested String // JSON array of skills
+  questions    String // JSON array of questions { id, type, question, options?, codeSnippet?, points }
+  answers      String? // JSON array of student answers
+  score        Float?
+  feedback     String? // Markdown or text feedback
+  status       String    @default("PENDING") // "PENDING", "SUBMITTED"
+  createdAt    DateTime  @default(now())
+  submittedAt  DateTime?
+
+  student User @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([status])
+  @@index([createdAt])
+}
+

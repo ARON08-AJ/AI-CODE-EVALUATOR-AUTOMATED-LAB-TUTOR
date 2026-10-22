@@ -22,25 +22,40 @@ async function main() {
   });
   console.log(`Created admin: ${admin.name} (${admin.email})`);
 
-  // 2. Create Users
+  // 2. Create Faculty
   const faculty = await prisma.user.upsert({
     where: { email: 'faculty@example.com' },
     update: { passwordHash: devPasswordHash },
     create: {
       name: 'Dr. Jane Smith',
       email: 'faculty@example.com',
+      registerNumber: 'FAC001',
       passwordHash: devPasswordHash,
       role: 'FACULTY',
       department: 'Computer Science',
     },
   });
 
+  const faculty2 = await prisma.user.upsert({
+    where: { email: 'faculty2@example.com' },
+    update: { passwordHash: devPasswordHash },
+    create: {
+      name: 'Dr. Robert Wilson',
+      email: 'faculty2@example.com',
+      registerNumber: 'FAC002',
+      passwordHash: devPasswordHash,
+      role: 'FACULTY',
+      department: 'Computer Science',
+    },
+  });
+
+  // 3. Create Students (5 students)
   const student1 = await prisma.user.upsert({
     where: { registerNumber: '8115U23CS001' },
     update: { passwordHash: devPasswordHash },
     create: {
       name: 'Alice Johnson',
-      email: 'alice@example.com',
+      email: '8115u23cs001@student.example.com',
       registerNumber: '8115U23CS001',
       passwordHash: devPasswordHash,
       role: 'STUDENT',
@@ -55,7 +70,7 @@ async function main() {
     update: { passwordHash: devPasswordHash },
     create: {
       name: 'Bob Williams',
-      email: 'bob@example.com',
+      email: '8115u23cs002@student.example.com',
       registerNumber: '8115U23CS002',
       passwordHash: devPasswordHash,
       role: 'STUDENT',
@@ -65,7 +80,52 @@ async function main() {
     },
   });
 
-  console.log('Users created/updated.');
+  const student3 = await prisma.user.upsert({
+    where: { registerNumber: '8115U23CS003' },
+    update: { passwordHash: devPasswordHash },
+    create: {
+      name: 'Aron Jonath AN',
+      email: '8115u23cs003@student.example.com',
+      registerNumber: '8115U23CS003',
+      passwordHash: devPasswordHash,
+      role: 'STUDENT',
+      department: 'Computer Science',
+      year: 2,
+      section: 'A',
+    },
+  });
+
+  const student4 = await prisma.user.upsert({
+    where: { registerNumber: '8115U23CS004' },
+    update: { passwordHash: devPasswordHash },
+    create: {
+      name: 'Charlie Davis',
+      email: '8115u23cs004@student.example.com',
+      registerNumber: '8115U23CS004',
+      passwordHash: devPasswordHash,
+      role: 'STUDENT',
+      department: 'Computer Science',
+      year: 2,
+      section: 'A',
+    },
+  });
+
+  const student5 = await prisma.user.upsert({
+    where: { registerNumber: '8115U23CS005' },
+    update: { passwordHash: devPasswordHash },
+    create: {
+      name: 'David Miller',
+      email: '8115u23cs005@student.example.com',
+      registerNumber: '8115U23CS005',
+      passwordHash: devPasswordHash,
+      role: 'STUDENT',
+      department: 'Computer Science',
+      year: 2,
+      section: 'A',
+    },
+  });
+
+  console.log('1 Admin, 2 Faculty, and 5 Students created/updated.');
 
   // 2. Create Lab
   const lab = await prisma.lab.upsert({

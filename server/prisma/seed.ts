@@ -49,15 +49,21 @@ async function main() {
     },
   });
 
-  // 3. Create Students (5 students)
+  // 3. Create Students (5 students with passwords set to their last 7 chars)
+  const passStudent1 = await argon2.hash('23CS001');
+  const passStudent2 = await argon2.hash('23CS002');
+  const passStudent3 = await argon2.hash('23CS003');
+  const passStudent4 = await argon2.hash('23CS004');
+  const passStudent5 = await argon2.hash('23CS005');
+
   const student1 = await prisma.user.upsert({
     where: { registerNumber: '8115U23CS001' },
-    update: { passwordHash: devPasswordHash },
+    update: { passwordHash: passStudent1 },
     create: {
       name: 'Alice Johnson',
       email: '8115u23cs001@student.example.com',
       registerNumber: '8115U23CS001',
-      passwordHash: devPasswordHash,
+      passwordHash: passStudent1,
       role: 'STUDENT',
       department: 'Computer Science',
       year: 2,
@@ -67,12 +73,12 @@ async function main() {
 
   const student2 = await prisma.user.upsert({
     where: { registerNumber: '8115U23CS002' },
-    update: { passwordHash: devPasswordHash },
+    update: { passwordHash: passStudent2 },
     create: {
       name: 'Bob Williams',
       email: '8115u23cs002@student.example.com',
       registerNumber: '8115U23CS002',
-      passwordHash: devPasswordHash,
+      passwordHash: passStudent2,
       role: 'STUDENT',
       department: 'Computer Science',
       year: 2,
@@ -82,12 +88,12 @@ async function main() {
 
   const student3 = await prisma.user.upsert({
     where: { registerNumber: '8115U23CS003' },
-    update: { passwordHash: devPasswordHash },
+    update: { passwordHash: passStudent3 },
     create: {
       name: 'Aron Jonath AN',
       email: '8115u23cs003@student.example.com',
       registerNumber: '8115U23CS003',
-      passwordHash: devPasswordHash,
+      passwordHash: passStudent3,
       role: 'STUDENT',
       department: 'Computer Science',
       year: 2,
@@ -97,12 +103,12 @@ async function main() {
 
   const student4 = await prisma.user.upsert({
     where: { registerNumber: '8115U23CS004' },
-    update: { passwordHash: devPasswordHash },
+    update: { passwordHash: passStudent4 },
     create: {
       name: 'Charlie Davis',
       email: '8115u23cs004@student.example.com',
       registerNumber: '8115U23CS004',
-      passwordHash: devPasswordHash,
+      passwordHash: passStudent4,
       role: 'STUDENT',
       department: 'Computer Science',
       year: 2,
@@ -112,12 +118,12 @@ async function main() {
 
   const student5 = await prisma.user.upsert({
     where: { registerNumber: '8115U23CS005' },
-    update: { passwordHash: devPasswordHash },
+    update: { passwordHash: passStudent5 },
     create: {
       name: 'David Miller',
       email: '8115u23cs005@student.example.com',
       registerNumber: '8115U23CS005',
-      passwordHash: devPasswordHash,
+      passwordHash: passStudent5,
       role: 'STUDENT',
       department: 'Computer Science',
       year: 2,

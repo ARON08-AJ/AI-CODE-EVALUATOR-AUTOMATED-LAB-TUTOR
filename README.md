@@ -407,11 +407,13 @@ The seed script creates the following pre-configured user accounts:
 | **System Administrator** | `admin@college.edu` | `admin123` / `password123` | Institutional oversight, faculty provisioning |
 | **Faculty Instructor 1** | `faculty@example.com` | `password123` | Dr. Jane Smith (`FAC001`) |
 | **Faculty Instructor 2** | `faculty2@example.com` | `password123` | Dr. Robert Wilson (`FAC002`) |
-| **Student 1** | `8115U23CS001` or `8115u23cs001@student.example.com` | `23CS001` or `password123` | Alice Johnson (CSE Year 2) |
-| **Student 2** | `8115U23CS002` or `8115u23cs002@student.example.com` | `23CS002` or `password123` | Bob Williams (CSE Year 2) |
-| **Student 3** | `8115U23CS003` or `8115u23cs003@student.example.com` | `23CS003` or `password123` | Aron Jonath AN (CSE Year 2) |
-| **Student 4** | `8115U23CS004` or `8115u23cs004@student.example.com` | `23CS004` or `password123` | Charlie Davis (CSE Year 2) |
-| **Student 5** | `8115U23CS005` or `8115u23cs005@student.example.com` | `23CS005` or `password123` | David Miller (CSE Year 2) |
+| **Student 1** | `8115U23CS001` or `8115u23cs001@student.example.com` | `23CS001` (Option 2: Last 7 Chars) | Alice Johnson (CSE Year 2) |
+| **Student 2** | `8115U23CS002` or `8115u23cs002@student.example.com` | `23CS002` (Option 2: Last 7 Chars) | Bob Williams (CSE Year 2) |
+| **Student 3** | `8115U23CS003` or `8115u23cs003@student.example.com` | `23CS003` (Option 2: Last 7 Chars) | Aron Jonath AN (CSE Year 2) |
+| **Student 4** | `8115U23CS004` or `8115u23cs004@student.example.com` | `23CS004` (Option 2: Last 7 Chars) | Charlie Davis (CSE Year 2) |
+| **Student 5** | `8115U23CS005` or `8115u23cs005@student.example.com` | `23CS005` (Option 2: Last 7 Chars) | David Miller (CSE Year 2) |
+
+> 🔒 **Security Notice for Student Logins**: Student password access is strictly restricted to **Option 2 (the last 7 characters of their register number, e.g., `23CS001`)**. Access via Option 1 (full register number) and Option 3 (master password `password123`) is disabled.
 
 ---
 

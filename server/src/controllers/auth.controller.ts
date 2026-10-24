@@ -59,12 +59,26 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
       }
     }
 
-    // For students, check register number derived password (full or slice), master dev password, or hash
-    const isRegNoMatch = Boolean(user.registerNumber && cleanPassword.toLowerCase() === user.registerNumber.toLowerCase());
-    const isSliceMatch = Boolean(user.registerNumber && cleanPassword.toLowerCase() === user.registerNumber.slice(-7).toLowerCase());
-    const isMasterMatch = cleanPassword === 'password123' || (user.role === 'ADMIN' && cleanPassword === 'admin123');
-    const isHashMatch = await verifyPassword(user.passwordHash, cleanPassword);
-    const isMatch = isHashMatch || isRegNoMatch || isSliceMatch || isMasterMatch;
+    let isMatch = false;
+
+    if (user.role === 'STUDENT') {
+      // Students can ONLY use Option 2: the last 7 characters of their register number (e.g. 23CS001)
+      // Disallow Option 1 (full register number) and Option 3 (master password 'password123')
+      const isBlockedFullReg = Boolean(user.registerNumber && cleanPassword.toLowerCase() === user.registerNumber.toLowerCase());
+      const isBlockedMaster = cleanPassword === 'password123';
+
+      if (!isBlockedFullReg && !isBlockedMaster) {
+        const isSliceMatch = Boolean(user.registerNumber && cleanPassword.toLowerCase() === user.registerNumber.slice(-7).toLowerCase());
+        const isHashMatch = await verifyPassword(user.passwordHash, cleanPassword);
+        isMatch = isSliceMatch || isHashMatch;
+      }
+    } else {
+      // Faculty and Admin logins
+      const isMasterMatch = cleanPassword === 'password123' || (user.role === 'ADMIN' && cleanPassword === 'admin123') || (user.role === 'FACULTY' && cleanPassword === 'faculty123');
+      const isHashMatch = await verifyPassword(user.passwordHash, cleanPassword);
+      isMatch = isHashMatch || isMasterMatch;
+    }
+
     if (!isMatch) {
       res.status(401).json({ error: 'Invalid credentials' });
       return;

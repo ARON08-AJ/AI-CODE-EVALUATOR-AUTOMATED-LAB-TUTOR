@@ -278,7 +278,7 @@ export const addSingleStudent = async (req: Request, res: Response, next: NextFu
       return;
     }
 
-    const initialPassword = data.registerNumber.slice(-7) || 'password123';
+    const initialPassword = data.registerNumber.slice(-7);
     const passwordHash = await hashPassword(initialPassword);
     const email = `${data.registerNumber.toLowerCase()}@student.example.com`;
 

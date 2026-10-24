@@ -76,7 +76,7 @@ echo Frontend: http://localhost:5173
 echo.
 echo Admin Login:   admin@college.edu       / admin123
 echo Faculty Login: faculty@example.com     / password123
-echo Student Login: 8115U23CS001            / password123
+echo Student Login: 8115U23CS001            / 23CS001
 echo ==========================================================
 echo.
 echo Opening browser in 3 seconds...

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { ThemeToggle } from '../../components/ThemeToggle';
+import { ChangePasswordModal } from '../../components/ChangePasswordModal';
 
 interface Faculty {
   id: string;
@@ -109,8 +110,9 @@ export const AdminDashboardPage: React.FC = () => {
   const [newPasswordInput, setNewPasswordInput] = useState('');
   const [resetSuccessMessage, setResetSuccessMessage] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
+  const [showAdminChangePassword, setShowAdminChangePassword] = useState(false);
 
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
 
   const fetchDashboard = async () => {
@@ -248,6 +250,14 @@ export const AdminDashboardPage: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center gap-4">
+              <button
+                onClick={() => setShowAdminChangePassword(true)}
+                className="flex items-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-colors text-sm font-medium"
+                title="Change Password"
+              >
+                <KeyRound className="w-4 h-4 mr-1.5 text-indigo-600 dark:text-indigo-400" />
+                Change Password
+              </button>
               <ThemeToggle />
               <button
                 onClick={handleLogout}
@@ -746,6 +756,16 @@ export const AdminDashboardPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Change Password Modal for Admin */}
+      <ChangePasswordModal
+        isOpen={showAdminChangePassword}
+        onClose={() => setShowAdminChangePassword(false)}
+        isLoggedIn={true}
+        userRole="ADMIN"
+        userName={user?.name || 'Administrator'}
+        userIdentifier={user?.email}
+      />
     </div>
   );
 };

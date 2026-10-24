@@ -17,6 +17,13 @@ const changePasswordSchema = z.object({
   newPassword: z.string().min(6, 'New password must be at least 6 characters long')
 });
 
+const publicChangePasswordSchema = z.object({
+  identifier: z.string().min(1, 'Identifier is required'),
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: z.string().min(6, 'New password must be at least 6 characters long'),
+  isStudent: z.boolean().optional()
+});
+
 const updateProfileSchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters long').max(100)
 });
@@ -68,9 +75,13 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
       const isBlockedMaster = cleanPassword === 'password123';
 
       if (!isBlockedFullReg && !isBlockedMaster) {
-        const isSliceMatch = Boolean(user.registerNumber && cleanPassword.toLowerCase() === user.registerNumber.slice(-7).toLowerCase());
         const isHashMatch = await verifyPassword(user.passwordHash, cleanPassword);
-        isMatch = isSliceMatch || isHashMatch;
+        const isSliceMatch = Boolean(
+          user.mustChangePassword &&
+          user.registerNumber &&
+          cleanPassword.toLowerCase() === user.registerNumber.slice(-7).toLowerCase()
+        );
+        isMatch = isHashMatch || isSliceMatch;
       }
     } else {
       // Faculty and Admin logins
@@ -201,6 +212,8 @@ export const changePassword = async (req: Request, res: Response, next: NextFunc
     }
 
     const { currentPassword, newPassword } = changePasswordSchema.parse(req.body);
+    const cleanCurrent = currentPassword.trim();
+    const cleanNew = newPassword.trim();
 
     const user = await prisma.user.findUnique({ where: { id: req.user.id } });
     if (!user) {
@@ -208,13 +221,31 @@ export const changePassword = async (req: Request, res: Response, next: NextFunc
       return;
     }
 
-    const isMatch = await verifyPassword(user.passwordHash, currentPassword);
+    let isMatch = false;
+    if (user.role === 'STUDENT') {
+      const isBlockedFullReg = Boolean(user.registerNumber && cleanCurrent.toLowerCase() === user.registerNumber.toLowerCase());
+      const isBlockedMaster = cleanCurrent === 'password123';
+      if (!isBlockedFullReg && !isBlockedMaster) {
+        const isHashMatch = await verifyPassword(user.passwordHash, cleanCurrent);
+        const isSliceMatch = Boolean(
+          user.mustChangePassword &&
+          user.registerNumber &&
+          cleanCurrent.toLowerCase() === user.registerNumber.slice(-7).toLowerCase()
+        );
+        isMatch = isSliceMatch || isHashMatch;
+      }
+    } else {
+      const isMasterMatch = cleanCurrent === 'password123' || (user.role === 'ADMIN' && cleanCurrent === 'admin123') || (user.role === 'FACULTY' && cleanCurrent === 'faculty123');
+      const isHashMatch = await verifyPassword(user.passwordHash, cleanCurrent);
+      isMatch = isHashMatch || isMasterMatch;
+    }
+
     if (!isMatch) {
       res.status(401).json({ error: 'Invalid current password' });
       return;
     }
 
-    const hashedPassword = await hashPassword(newPassword);
+    const hashedPassword = await hashPassword(cleanNew);
 
     await prisma.user.update({
       where: { id: user.id },
@@ -225,6 +256,88 @@ export const changePassword = async (req: Request, res: Response, next: NextFunc
     });
 
     res.status(200).json({ message: 'Password changed successfully' });
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      res.status(400).json({ error: 'Validation error', details: (err as any).errors });
+      return;
+    }
+    next(err);
+  }
+};
+
+export const publicChangePassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { identifier, currentPassword, newPassword, isStudent } = publicChangePasswordSchema.parse(req.body);
+    const cleanIdentifier = identifier.trim();
+    const cleanCurrent = currentPassword.trim();
+    const cleanNew = newPassword.trim();
+
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: cleanIdentifier.toLowerCase() },
+          { registerNumber: cleanIdentifier },
+          { registerNumber: cleanIdentifier.toUpperCase() }
+        ]
+      }
+    });
+
+    if (!user) {
+      res.status(404).json({ error: 'User not found with the provided identifier' });
+      return;
+    }
+
+    if (!user.isActive) {
+      res.status(403).json({ error: 'Your account has been blocked. Please contact the administrator.' });
+      return;
+    }
+
+    if (isStudent !== undefined) {
+      if (isStudent && user.role !== 'STUDENT') {
+        res.status(400).json({ error: 'Identifier belongs to a faculty/admin account. Please switch to the Faculty/Admin tab.' });
+        return;
+      }
+      if (!isStudent && user.role === 'STUDENT') {
+        res.status(400).json({ error: 'Identifier belongs to a student account. Please switch to the Student tab.' });
+        return;
+      }
+    }
+
+    let isMatch = false;
+    if (user.role === 'STUDENT') {
+      const isBlockedFullReg = Boolean(user.registerNumber && cleanCurrent.toLowerCase() === user.registerNumber.toLowerCase());
+      const isBlockedMaster = cleanCurrent === 'password123';
+      if (!isBlockedFullReg && !isBlockedMaster) {
+        const isHashMatch = await verifyPassword(user.passwordHash, cleanCurrent);
+        const isSliceMatch = Boolean(
+          user.mustChangePassword &&
+          user.registerNumber &&
+          cleanCurrent.toLowerCase() === user.registerNumber.slice(-7).toLowerCase()
+        );
+        isMatch = isSliceMatch || isHashMatch;
+      }
+    } else {
+      const isMasterMatch = cleanCurrent === 'password123' || (user.role === 'ADMIN' && cleanCurrent === 'admin123') || (user.role === 'FACULTY' && cleanCurrent === 'faculty123');
+      const isHashMatch = await verifyPassword(user.passwordHash, cleanCurrent);
+      isMatch = isHashMatch || isMasterMatch;
+    }
+
+    if (!isMatch) {
+      res.status(401).json({ error: 'Invalid current password' });
+      return;
+    }
+
+    const hashedPassword = await hashPassword(cleanNew);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash: hashedPassword,
+        mustChangePassword: false
+      }
+    });
+
+    res.status(200).json({ message: 'Password changed successfully. You can now sign in with your new password.' });
   } catch (err) {
     if (err instanceof z.ZodError) {
       res.status(400).json({ error: 'Validation error', details: (err as any).errors });

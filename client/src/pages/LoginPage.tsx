@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../utils/api';
 import { KeyRound, Mail, UserCircle } from 'lucide-react';
+import { ChangePasswordModal } from '../components/ChangePasswordModal';
 
 export const LoginPage: React.FC = () => {
   const [roleType, setRoleType] = useState<'STUDENT' | 'FACULTY_ADMIN'>('STUDENT');
@@ -10,6 +11,7 @@ export const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
   
   const { user, login } = useAuth();
   const navigate = useNavigate();
@@ -111,7 +113,7 @@ export const LoginPage: React.FC = () => {
               />
             </div>
           </div>
-          <div>
+          <div className="space-y-3">
             <button
               type="submit"
               disabled={loading}
@@ -119,11 +121,28 @@ export const LoginPage: React.FC = () => {
             >
               {loading ? 'Signing in...' : 'Sign in'}
             </button>
+
+            <button
+              type="button"
+              onClick={() => setShowChangePassword(true)}
+              className="flex w-full items-center justify-center gap-1.5 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700/60 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600/80 transition-colors shadow-sm"
+            >
+              <KeyRound className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+              Change Password
+            </button>
           </div>
           <div className="text-center text-sm text-gray-500 dark:text-gray-400">
             Forgot password? Please contact your administrator.
           </div>
         </form>
+
+        <ChangePasswordModal
+          isOpen={showChangePassword}
+          onClose={() => setShowChangePassword(false)}
+          initialRole={roleType}
+          initialIdentifier={identifier}
+          isLoggedIn={false}
+        />
       </div>
     </div>
   );

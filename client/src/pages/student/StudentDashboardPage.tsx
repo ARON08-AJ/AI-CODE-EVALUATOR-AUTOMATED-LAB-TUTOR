@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { BookOpen, CheckCircle, Clock, FileCode2, Target, Trophy, Bell, UserCircle, Sparkles } from 'lucide-react';
+import { BookOpen, CheckCircle, Clock, FileCode2, Target, Trophy, Bell, UserCircle, Sparkles, KeyRound } from 'lucide-react';
 import { ThemeToggle } from '../../components/ThemeToggle';
 import { useAuth } from '../../contexts/AuthContext';
+import { ChangePasswordModal } from '../../components/ChangePasswordModal';
 
 interface TopicProgress {
   topicId: string;
@@ -75,6 +76,7 @@ export const StudentDashboardPage: React.FC = () => {
   const [nameInput, setNameInput] = useState('');
   const [savingName, setSavingName] = useState(false);
   const [nameError, setNameError] = useState('');
+  const [showChangePassword, setShowChangePassword] = useState(false);
 
   const { updateUser } = useAuth();
   const token = localStorage.getItem('token');
@@ -263,6 +265,14 @@ export const StudentDashboardPage: React.FC = () => {
                 {data.student.registerNumber}
               </span>
             )}
+            <button
+              onClick={() => setShowChangePassword(true)}
+              className="inline-flex items-center text-sm font-medium text-indigo-100 hover:text-white dark:text-indigo-200 dark:hover:text-white transition-colors bg-indigo-500/40 hover:bg-indigo-500/60 px-3 py-1.5 rounded-lg border border-indigo-400/30"
+              title="Change Password"
+            >
+              <KeyRound className="w-4 h-4 mr-1.5 text-amber-300" />
+              Change Password
+            </button>
             <ThemeToggle />
             <button 
               onClick={() => {
@@ -515,6 +525,15 @@ export const StudentDashboardPage: React.FC = () => {
 
         </div>
       </div>
+
+      <ChangePasswordModal
+        isOpen={showChangePassword}
+        onClose={() => setShowChangePassword(false)}
+        isLoggedIn={true}
+        userRole="STUDENT"
+        userName={data.student.name}
+        userIdentifier={data.student.registerNumber}
+      />
     </div>
   );
 };

@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { BookOpen, Users, Clock, FileCode2, Target, CheckCircle } from 'lucide-react';
+import { BookOpen, Users, Clock, FileCode2, Target, CheckCircle, KeyRound } from 'lucide-react';
 import { ThemeToggle } from '../../components/ThemeToggle';
+import { ChangePasswordModal } from '../../components/ChangePasswordModal';
 
 interface FacultyDashboardData {
   faculty: {
@@ -52,6 +53,7 @@ export const FacultyDashboardPage: React.FC = () => {
   const [data, setData] = useState<FacultyDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showChangePassword, setShowChangePassword] = useState(false);
 
   
   const token = localStorage.getItem('token');
@@ -122,6 +124,14 @@ export const FacultyDashboardPage: React.FC = () => {
               <Link to="/faculty/analytics" className="text-sm font-medium text-indigo-200 hover:text-white px-3 py-1.5 rounded-md transition-colors">Analytics</Link>
               <Link to="/faculty/announcements" className="text-sm font-medium text-indigo-200 hover:text-white px-3 py-1.5 rounded-md transition-colors">Announcements</Link>
             </nav>
+            <button 
+              onClick={() => setShowChangePassword(true)}
+              className="text-sm font-medium text-indigo-200 hover:text-white transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-md hover:bg-indigo-800/40"
+              title="Change Password"
+            >
+              <KeyRound className="w-4 h-4 text-amber-300" />
+              Change Password
+            </button>
             <ThemeToggle />
             <button 
               onClick={() => {
@@ -316,6 +326,14 @@ export const FacultyDashboardPage: React.FC = () => {
 
         </div>
       </div>
+
+      <ChangePasswordModal
+        isOpen={showChangePassword}
+        onClose={() => setShowChangePassword(false)}
+        isLoggedIn={true}
+        userRole="FACULTY"
+        userName={data.faculty.name}
+      />
     </div>
   );
 };

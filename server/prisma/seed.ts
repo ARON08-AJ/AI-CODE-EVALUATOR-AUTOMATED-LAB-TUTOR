@@ -58,7 +58,7 @@ async function main() {
 
   const student1 = await prisma.user.upsert({
     where: { registerNumber: '8115U23CS001' },
-    update: { passwordHash: passStudent1 },
+    update: { passwordHash: passStudent1, mustChangePassword: true },
     create: {
       name: 'Alice Johnson',
       email: '8115u23cs001@student.example.com',
@@ -68,12 +68,13 @@ async function main() {
       department: 'Computer Science',
       year: 2,
       section: 'A',
+      mustChangePassword: true,
     },
   });
 
   const student2 = await prisma.user.upsert({
     where: { registerNumber: '8115U23CS002' },
-    update: { passwordHash: passStudent2 },
+    update: { passwordHash: passStudent2, mustChangePassword: true },
     create: {
       name: 'Bob Williams',
       email: '8115u23cs002@student.example.com',
@@ -83,12 +84,13 @@ async function main() {
       department: 'Computer Science',
       year: 2,
       section: 'A',
+      mustChangePassword: true,
     },
   });
 
   const student3 = await prisma.user.upsert({
     where: { registerNumber: '8115U23CS003' },
-    update: { passwordHash: passStudent3 },
+    update: { passwordHash: passStudent3, mustChangePassword: true },
     create: {
       name: 'Aron Jonath AN',
       email: '8115u23cs003@student.example.com',
@@ -98,12 +100,13 @@ async function main() {
       department: 'Computer Science',
       year: 2,
       section: 'A',
+      mustChangePassword: true,
     },
   });
 
   const student4 = await prisma.user.upsert({
     where: { registerNumber: '8115U23CS004' },
-    update: { passwordHash: passStudent4 },
+    update: { passwordHash: passStudent4, mustChangePassword: true },
     create: {
       name: 'Charlie Davis',
       email: '8115u23cs004@student.example.com',
@@ -113,12 +116,13 @@ async function main() {
       department: 'Computer Science',
       year: 2,
       section: 'A',
+      mustChangePassword: true,
     },
   });
 
   const student5 = await prisma.user.upsert({
     where: { registerNumber: '8115U23CS005' },
-    update: { passwordHash: passStudent5 },
+    update: { passwordHash: passStudent5, mustChangePassword: true },
     create: {
       name: 'David Miller',
       email: '8115u23cs005@student.example.com',
@@ -128,6 +132,7 @@ async function main() {
       department: 'Computer Science',
       year: 2,
       section: 'A',
+      mustChangePassword: true,
     },
   });
 

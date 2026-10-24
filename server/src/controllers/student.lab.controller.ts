@@ -327,7 +327,8 @@ export const getStudentAssignments = async (req: Request, res: Response, next: N
 
 const runLabSchema = z.object({
   language: z.enum(['C', 'C++', 'Java', 'Python']),
-  sourceCode: z.string().min(1, 'Source code cannot be empty')
+  sourceCode: z.string().min(1, 'Source code cannot be empty'),
+  input: z.string().optional()
 });
 
 export const runLabCode = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -340,7 +341,7 @@ export const runLabCode = async (req: Request, res: Response, next: NextFunction
       res.status(400).json({ error: 'Invalid request', details: parseResult.error.format() });
       return;
     }
-    const { language, sourceCode } = parseResult.data;
+    const { language, sourceCode, input } = parseResult.data;
 
     const maxSourceSize = parseInt(process.env.MAX_SOURCE_CODE_SIZE || '100000', 10);
     if (Buffer.byteLength(sourceCode, 'utf8') > maxSourceSize) {
@@ -358,7 +359,7 @@ export const runLabCode = async (req: Request, res: Response, next: NextFunction
           }
         }
       },
-      select: { id: true }
+      select: { id: true, sampleInput: true }
     });
 
     if (!lab) {
@@ -377,7 +378,7 @@ export const runLabCode = async (req: Request, res: Response, next: NextFunction
       if (activeExamAttempt) {
         lab = await prisma.lab.findFirst({
           where: { id, published: true },
-          select: { id: true }
+          select: { id: true, sampleInput: true }
         });
       }
     }
@@ -387,30 +388,16 @@ export const runLabCode = async (req: Request, res: Response, next: NextFunction
       return;
     }
 
-    const testCasesDb = await prisma.testCase.findMany({
-      where: { labId: id, visibility: 'PUBLIC' },
-      orderBy: { createdAt: 'asc' }
-    });
+    // Determine execution input (custom input from student, or default sample input from lab)
+    const runInput = input !== undefined && input !== '' ? input : (lab.sampleInput || '');
 
-    if (testCasesDb.length === 0) {
-      res.status(400).json({ error: 'No public test cases configured for this lab.' });
-      return;
-    }
-
-    const testCases: TestCaseInput[] = testCasesDb.map(tc => ({
-      id: tc.id,
-      input: tc.input,
-      expectedOutput: tc.expectedOutput,
-      visibility: tc.visibility as 'PUBLIC' | 'HIDDEN'
-    }));
-
-    const response = await judgeQueue.enqueueAndWait<EvaluationResponse>({
-      type: 'EVALUATION',
+    const response = await judgeQueue.enqueueAndWait<any>({
+      type: 'EXECUTION',
       studentId,
       labId: id,
       language,
       sourceCode,
-      testCases
+      input: runInput
     });
     
     if (!response.success && response.error?.includes('Server is currently busy')) {
@@ -418,12 +405,37 @@ export const runLabCode = async (req: Request, res: Response, next: NextFunction
       return;
     }
 
-    if (!response.success) {
+    if (!response.success && !response.result) {
       res.status(500).json(response);
       return;
     }
 
-    res.status(200).json(response);
+    const execResult = response.result || {
+      status: response.error ? 'RUNTIME_ERROR' : 'SUCCESS',
+      stdout: '',
+      stderr: response.error || '',
+      executionTime: null
+    };
+
+    res.status(200).json({
+      success: true,
+      result: execResult,
+      evaluation: {
+        status: execResult.status === 'SUCCESS' ? 'ACCEPTED' : execResult.status,
+        passedTests: execResult.status === 'SUCCESS' ? 1 : 0,
+        totalTests: 1,
+        failedTests: execResult.status === 'SUCCESS' ? 0 : 1,
+        executionTime: execResult.executionTime || 0,
+        compilerOutput: execResult.status === 'COMPILATION_ERROR' ? execResult.stderr : undefined,
+        tests: [{
+          testNumber: 1,
+          visibility: 'PUBLIC',
+          status: execResult.status === 'SUCCESS' ? 'PASSED' : execResult.status,
+          actualOutput: execResult.stdout,
+          error: execResult.stderr
+        }]
+      }
+    });
   } catch (err: any) {
     if (err.message?.includes('duplicate') || err.message?.includes('busy')) {
       res.status(429).json({ success: false, error: err.message });

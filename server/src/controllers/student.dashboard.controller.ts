@@ -165,7 +165,14 @@ export const getStudentDashboard = async (req: Request, res: Response, next: Nex
     res.status(200).json({
       success: true,
       dashboard: {
-        student,
+        student: {
+          ...student,
+          needsNameSetup: Boolean(
+            !student.name ||
+            student.name.trim().toLowerCase().startsWith('student ') ||
+            student.name === student.registerNumber
+          )
+        },
         stats: {
           assignedLabs: assignedLabsCount,
           completedLabs,

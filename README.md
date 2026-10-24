@@ -345,8 +345,8 @@ The Groq LLM integration enforces strict institutional constraints in `GroqProvi
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/<your-username>/<your-repo-name>.git
-cd college-programming-lab
+git clone https://github.com/ARON08-AJ/AI-CODE-EVALUATOR-AUTOMATED-LAB-TUTOR.git
+cd AI-CODE-EVALUATOR-AUTOMATED-LAB-TUTOR
 
 # 2. Install all root, backend, and frontend dependencies
 npm install

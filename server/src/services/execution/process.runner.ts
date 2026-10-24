@@ -19,7 +19,7 @@ export class ProcessRunner {
 
       const child = spawn(command, args, {
         cwd,
-        env: { PATH: process.env.PATH }, // minimal environment
+        env: { ...process.env },
         stdio: ['pipe', 'pipe', 'pipe']
       });
 

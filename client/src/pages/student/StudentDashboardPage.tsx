@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { BookOpen, CheckCircle, Clock, FileCode2, Target, Trophy, Bell } from 'lucide-react';
+import { BookOpen, CheckCircle, Clock, FileCode2, Target, Trophy, Bell, UserCircle, Sparkles } from 'lucide-react';
 import { ThemeToggle } from '../../components/ThemeToggle';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface TopicProgress {
   topicId: string;
@@ -70,7 +71,12 @@ export const StudentDashboardPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  
+  const [showNameModal, setShowNameModal] = useState(false);
+  const [nameInput, setNameInput] = useState('');
+  const [savingName, setSavingName] = useState(false);
+  const [nameError, setNameError] = useState('');
+
+  const { updateUser } = useAuth();
   const token = localStorage.getItem('token');
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
@@ -81,7 +87,21 @@ export const StudentDashboardPage: React.FC = () => {
         const response = await axios.get(`${apiUrl}/student/dashboard`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setData(response.data.dashboard);
+        const dashboardData = response.data.dashboard;
+        setData(dashboardData);
+
+        // Check if student has a placeholder name (First time login)
+        const studentInfo = dashboardData.student;
+        const isPlaceholder = Boolean(
+          (studentInfo as any).needsNameSetup ||
+          !studentInfo.name ||
+          studentInfo.name.trim().toLowerCase().startsWith('student ') ||
+          studentInfo.name === studentInfo.registerNumber
+        );
+
+        if (isPlaceholder) {
+          setShowNameModal(true);
+        }
       } catch (err: any) {
         setError(err.response?.data?.error || 'Unable to load dashboard.');
       } finally {
@@ -90,6 +110,46 @@ export const StudentDashboardPage: React.FC = () => {
     };
     fetchDashboard();
   }, [apiUrl, token]);
+
+  const handleSaveName = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = nameInput.trim();
+    if (!trimmed) {
+      setNameError('Please enter your name.');
+      return;
+    }
+    if (trimmed.length < 2) {
+      setNameError('Name must be at least 2 characters long.');
+      return;
+    }
+
+    try {
+      setSavingName(true);
+      setNameError('');
+      await axios.put(
+        `${apiUrl}/auth/profile`,
+        { name: trimmed },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (data) {
+        setData({
+          ...data,
+          student: {
+            ...data.student,
+            name: trimmed
+          }
+        });
+      }
+
+      updateUser({ name: trimmed, needsNameSetup: false });
+      setShowNameModal(false);
+    } catch (err: any) {
+      setNameError(err.response?.data?.error || 'Failed to save name. Please try again.');
+    } finally {
+      setSavingName(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -124,6 +184,58 @@ export const StudentDashboardPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+      {/* First-Time Student Name Setup Modal */}
+      {showNameModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-8 border border-gray-100 dark:border-gray-700 relative">
+            <div className="w-16 h-16 bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mb-5 text-white shadow-lg mx-auto">
+              <UserCircle className="w-10 h-10" />
+            </div>
+
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-xs font-semibold uppercase tracking-wider mb-2">
+                <Sparkles className="w-3.5 h-3.5" /> First-Time Setup
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Welcome to AutoLab!</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                Since this is your first time logging in, please tell us your name to set up your profile.
+              </p>
+            </div>
+
+            <form onSubmit={handleSaveName} className="space-y-5">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  What is your name?
+                </label>
+                <input
+                  type="text"
+                  autoFocus
+                  required
+                  placeholder="e.g. John Doe"
+                  value={nameInput}
+                  onChange={(e) => {
+                    setNameInput(e.target.value);
+                    if (nameError) setNameError('');
+                  }}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-base shadow-sm"
+                />
+                {nameError && (
+                  <p className="text-red-500 text-xs mt-1.5 font-medium">{nameError}</p>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                disabled={savingName}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {savingName ? 'Saving...' : 'Save & Continue'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Header Area */}
       <div className="bg-indigo-600 dark:bg-indigo-900 pb-32 transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-16 flex items-center justify-between">

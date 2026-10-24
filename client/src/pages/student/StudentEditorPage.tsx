@@ -189,7 +189,18 @@ export const StudentEditorPage: React.FC = () => {
         sourceCode: code,
         input: customInput
       });
-      setExecutionResult(res.data.result);
+      if (res.data.result) {
+        setExecutionResult(res.data.result);
+      } else if (res.data.evaluation) {
+        const ev = res.data.evaluation;
+        const firstTest = ev.tests?.[0];
+        setExecutionResult({
+          status: ev.status === 'ACCEPTED' ? 'SUCCESS' : ev.status,
+          stdout: firstTest?.actualOutput || '',
+          stderr: ev.compilerOutput || firstTest?.error || '',
+          executionTime: ev.executionTime
+        });
+      }
     } catch (err: any) {
       handleApiError(err);
     } finally {

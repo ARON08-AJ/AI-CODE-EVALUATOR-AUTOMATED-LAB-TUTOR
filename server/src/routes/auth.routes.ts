@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { login, getCurrentUser, changePassword } from '../controllers/auth.controller';
+import { login, getCurrentUser, changePassword, updateProfile } from '../controllers/auth.controller';
 import { requireAuth } from '../middleware/auth.middleware';
 import { requireRole } from '../middleware/role.middleware';
 
@@ -8,6 +8,7 @@ const router = Router();
 router.post('/login', login);
 router.get('/me', requireAuth, getCurrentUser);
 router.post('/change-password', requireAuth, changePassword);
+router.put('/profile', requireAuth, updateProfile);
 
 // Test routes for authorization verification
 router.get('/test/student', requireAuth, requireRole(['STUDENT']), (req: Request, res: Response) => {
